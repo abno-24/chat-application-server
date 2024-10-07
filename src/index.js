@@ -1,9 +1,34 @@
 import dotenv from "dotenv";
 import { connectDB } from "./db/index.js";
 import { app } from "./app.js";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 dotenv.config({
   path: "./.env",
+});
+
+const PORT = process.env.PORT || 8000;
+
+const server = createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("A user connected");
+
+  socket.on("chatMessage", (msg) => {
+    io.emit("chatMessage", msg);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("A user disconnected");
+  });
 });
 
 connectDB()
@@ -13,8 +38,8 @@ connectDB()
       throw error;
     });
 
-    app.listen(process.env.PORT || 8000, () => {
-      console.log(`Server is running at PORT: ${process.env.PORT}`);
+    server.listen(PORT, () => {
+      console.log(`Server is running at PORT: ${PORT}`);
     });
   })
   .catch((err) => {
